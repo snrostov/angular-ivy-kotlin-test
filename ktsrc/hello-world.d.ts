@@ -5,9 +5,7 @@ import {Component} from "@angular/core";
     template: `<h3>Hello {{name}} {{test()}}</h3>`
 })
 export class HelloWorld {
-    name: String = "undef";
+    name: String;
 
-    test(): String {
-        return "undef";
-    }
+    test(): String
 }

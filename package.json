@@ -23,9 +23,10 @@
     "typescript": "^2.7.1"
   },
   "scripts": {
+    "clean": "yarn run rimraf ktsrc/lib",
     "build-ktngc-tool": "yarn run tsc -p tools/ktngc/tsconfig.json",
     "build-kt": "/usr/bin/env node $NODE_DEBUG_OPTION tools/ktngc/bin/ktngc.js -p ktsrc",
-    "test-kt": "yarn run build-ktngc-tool && yarn run build-kt",
+    "test-kt": "yarn run clean && yarn run build-ktngc-tool && yarn run build-kt",
     "build": "ngc",
     "bundle": "rollup -c rollup.config.js",
     "serve": "http-server public",
