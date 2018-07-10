@@ -1,4 +1,5 @@
 import * as ng from "@angular/compiler-cli";
+import {CompilerHost} from "@angular/compiler-cli";
 import * as ts from "typescript";
 import {EmitHint} from "typescript";
 import {readCommandLineAndConfiguration} from "@angular/compiler-cli/src/main";
@@ -75,7 +76,7 @@ function emit(
     const emittedFiles: Array<string> = [];
 
     tsProg.getSourceFiles().forEach(file => {
-        if (file.fileName.endsWith('.d.ts')) {
+        if (file.fileName.endsWith('.d.d.ts')) {
             const importManager = new ImportManager();
             const contents: Array<string> = [];
 
@@ -139,7 +140,7 @@ function emit(
                 );
 
                 const fileBaseName = path.parse(file.fileName).base;
-                const originalFileName = fileBaseName.substr(0, fileBaseName.length - '.d.ts'.length);
+                const originalFileName = fileBaseName.substr(0, fileBaseName.length - '.d.d.ts'.length);
                 const outputFileName = `${compilerOpts.outDir}/${originalFileName}.js`;
                 emittedFiles.push(outputFileName);
 
@@ -154,23 +155,16 @@ function emit(
                 const outputDTsFileName = `${compilerOpts.outDir}/${originalFileName}.d.ts`;
                 emittedFiles.push(outputDTsFileName);
 
-                // collect string before transforming (or offsets will be invalid)
-                // todo: find proper way to remove decorators
-                const strsToRemove: Array<string> = [];
-                dTsDecoratorsToFilter.forEach(item => {
-                    let it = item.import;
-                    if (it) {
-                        // todo: support more cases, for example `import {A, B} from "C"`
-                        strsToRemove.push(`import {${it.name}} from "${it.from}";`, '');
-                    }
+                // emitCleanedAndTransformedDts({
+                //     dTsDecoratorsToFilter: dTsDecoratorsToFilter,
+                //     file: file,
+                //     compilation: compilation,
+                //     host: host,
+                //     outputDTsFileName: outputDTsFileName
+                // });
 
-                    strsToRemove.push(item.node.getFullText(file));
-                });
-
-                let dTsContents = compilation.transformedDtsFor(file.fileName, file.text);
-                strsToRemove.forEach(item => {
-                    dTsContents = dTsContents.replace(item, '');
-                });
+                const clean_dts = host.readFile(file.fileName.replace(".d.d", ".d"));
+                let dTsContents = compilation.transformedDtsFor(file.fileName, clean_dts!);
 
                 host.writeFile(
                     outputDTsFileName,
@@ -188,6 +182,42 @@ function emit(
         emittedFiles: emittedFiles,
         diagnostics: allDiagnostics
     };
+}
+
+function emitCleanedAndTransformedDts(parameters: {
+    dTsDecoratorsToFilter: Array<{ import: Import | null; node: ts.Node }>,
+    file: ts.SourceFile,
+    compilation: IvyCompilation,
+    host: CompilerHost,
+    outputDTsFileName: string
+}) {
+    let {dTsDecoratorsToFilter, file, compilation, host, outputDTsFileName} = parameters;
+
+// collect string before transforming (or offsets will be invalid)
+    // todo: find proper way to remove decorators
+    const strsToRemove: Array<string> = [];
+    dTsDecoratorsToFilter.forEach(item => {
+        let it = item.import;
+        if (it) {
+            // todo: support more cases, for example `import {A, B} from "C"`
+            strsToRemove.push(`import {${it.name}} from "${it.from}";`, '');
+        }
+
+        strsToRemove.push(item.node.getFullText(file));
+    });
+
+    let dTsContents = compilation.transformedDtsFor(file.fileName, file.text);
+    strsToRemove.forEach(item => {
+        dTsContents = dTsContents.replace(item, '');
+    });
+
+    host.writeFile(
+        outputDTsFileName,
+        dTsContents,
+        false,
+        undefined,
+        [file]
+    );
 }
 
 function reportErrorsAndExit(allDiagnostics: ng.Diagnostics): number {

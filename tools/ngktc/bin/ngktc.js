@@ -44,7 +44,7 @@ function emit(tsProg, host, compilerOpts, opts) {
     var printer = ts.createPrinter();
     var emittedFiles = [];
     tsProg.getSourceFiles().forEach(function (file) {
-        if (file.fileName.endsWith('.d.ts')) {
+        if (file.fileName.endsWith('.d.d.ts')) {
             var importManager_1 = new translator_1.ImportManager();
             var contents_1 = [];
             var wasCompiled_1 = false;
@@ -75,28 +75,22 @@ function emit(tsProg, host, compilerOpts, opts) {
                 // Generate the import statements to prepend.
                 var imports = importManager_1.getAllImports().map(function (i) { return printer.printNode(typescript_1.EmitHint.Unspecified, ts.createImportDeclaration(undefined, undefined, ts.createImportClause(undefined, ts.createNamespaceImport(ts.createIdentifier(i.as))), ts.createLiteral(i.name)), file); });
                 var fileBaseName = path.parse(file.fileName).base;
-                var originalFileName = fileBaseName.substr(0, fileBaseName.length - '.d.ts'.length);
+                var originalFileName = fileBaseName.substr(0, fileBaseName.length - '.d.d.ts'.length);
                 var outputFileName = compilerOpts.outDir + "/" + originalFileName + ".js";
                 emittedFiles.push(outputFileName);
                 host.writeFile(outputFileName, imports.concat([''], contents_1).join('\n'), false, undefined, [file]);
                 var outputDTsFileName = compilerOpts.outDir + "/" + originalFileName + ".d.ts";
                 emittedFiles.push(outputDTsFileName);
-                // collect string before transforming (or offsets will be invalid)
-                // todo: find proper way to remove decorators
-                var strsToRemove_1 = [];
-                dTsDecoratorsToFilter_1.forEach(function (item) {
-                    var it = item["import"];
-                    if (it) {
-                        // todo: support more cases, for example `import {A, B} from "C"`
-                        strsToRemove_1.push("import {" + it.name + "} from \"" + it.from + "\";", '');
-                    }
-                    strsToRemove_1.push(item.node.getFullText(file));
-                });
-                var dTsContents_1 = compilation.transformedDtsFor(file.fileName, file.text);
-                strsToRemove_1.forEach(function (item) {
-                    dTsContents_1 = dTsContents_1.replace(item, '');
-                });
-                host.writeFile(outputDTsFileName, dTsContents_1, false, undefined, [file]);
+                // emitCleanedAndTransformedDts({
+                //     dTsDecoratorsToFilter: dTsDecoratorsToFilter,
+                //     file: file,
+                //     compilation: compilation,
+                //     host: host,
+                //     outputDTsFileName: outputDTsFileName
+                // });
+                var clean_dts = host.readFile(file.fileName.replace(".d.d", ".d"));
+                var dTsContents = compilation.transformedDtsFor(file.fileName, clean_dts);
+                host.writeFile(outputDTsFileName, dTsContents, false, undefined, [file]);
             }
         }
     });
@@ -105,6 +99,25 @@ function emit(tsProg, host, compilerOpts, opts) {
         emittedFiles: emittedFiles,
         diagnostics: allDiagnostics
     };
+}
+function emitCleanedAndTransformedDts(parameters) {
+    var dTsDecoratorsToFilter = parameters.dTsDecoratorsToFilter, file = parameters.file, compilation = parameters.compilation, host = parameters.host, outputDTsFileName = parameters.outputDTsFileName;
+    // collect string before transforming (or offsets will be invalid)
+    // todo: find proper way to remove decorators
+    var strsToRemove = [];
+    dTsDecoratorsToFilter.forEach(function (item) {
+        var it = item["import"];
+        if (it) {
+            // todo: support more cases, for example `import {A, B} from "C"`
+            strsToRemove.push("import {" + it.name + "} from \"" + it.from + "\";", '');
+        }
+        strsToRemove.push(item.node.getFullText(file));
+    });
+    var dTsContents = compilation.transformedDtsFor(file.fileName, file.text);
+    strsToRemove.forEach(function (item) {
+        dTsContents = dTsContents.replace(item, '');
+    });
+    host.writeFile(outputDTsFileName, dTsContents, false, undefined, [file]);
 }
 function reportErrorsAndExit(allDiagnostics) {
     var errorsAndWarnings = ng.filterErrorsAndWarnings(allDiagnostics);
