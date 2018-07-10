@@ -12,9 +12,9 @@ var path = require("path");
 // CLI entry point
 if (require.main === module) {
     var args = process.argv.slice(2);
-    process.exitCode = compileKotlin(args);
+    process.exitCode = ngktc(args);
 }
-function compileKotlin(args) {
+function ngktc(args) {
     var _a = main_1.readCommandLineAndConfiguration(args), project = _a.project, rootNames = _a.rootNames, options = _a.options, configErrors = _a.errors, emitFlags = _a.emitFlags;
     options.enableIvy = 'ngtsc';
     var host = ng.createCompilerHost({ options: options });
@@ -22,7 +22,7 @@ function compileKotlin(args) {
     var emitResult = emit(program['tsProgram'], host, options);
     return reportErrorsAndExit(emitResult.diagnostics);
 }
-exports.compileKotlin = compileKotlin;
+exports.ngktc = ngktc;
 function emit(tsProg, host, compilerOpts, opts) {
     var checker = tsProg.getTypeChecker();
     var reflector = new metadata_1.TypeScriptReflectionHost(checker);
@@ -39,7 +39,6 @@ function emit(tsProg, host, compilerOpts, opts) {
     // Analyze every source file in the program.
     tsProg.getSourceFiles()
         .forEach(function (file) {
-        var tsFile = file;
         allDiagnostics = allDiagnostics.concat(compilation.analyze(file));
     });
     var printer = ts.createPrinter();
@@ -48,7 +47,7 @@ function emit(tsProg, host, compilerOpts, opts) {
         if (file.fileName.endsWith('.d.ts')) {
             var importManager_1 = new translator_1.ImportManager();
             var contents_1 = [];
-            var wasCompiled = false;
+            var wasCompiled_1 = false;
             var dTsDecoratorsToFilter_1 = [];
             ts.forEachChild(file, function (node) {
                 if (ts.isClassDeclaration(node)) {
@@ -57,7 +56,7 @@ function emit(tsProg, host, compilerOpts, opts) {
                         var decorator = compilation.ivyDecoratorFor(node);
                         if (decorator)
                             dTsDecoratorsToFilter_1.push(decorator);
-                        wasCompiled = true;
+                        wasCompiled_1 = true;
                         var className = node.name.escapedText;
                         var expr = translator_1.translateExpression(field.initializer, importManager_1);
                         var statements = field.statements.map(function (stmt) { return printer.printNode(typescript_1.EmitHint.Unspecified, translator_1.translateStatement(stmt, importManager_1), file); });
@@ -72,7 +71,7 @@ function emit(tsProg, host, compilerOpts, opts) {
                     }
                 }
             });
-            if (wasCompiled) {
+            if (wasCompiled_1) {
                 // Generate the import statements to prepend.
                 var imports = importManager_1.getAllImports().map(function (i) { return printer.printNode(typescript_1.EmitHint.Unspecified, ts.createImportDeclaration(undefined, undefined, ts.createImportClause(undefined, ts.createNamespaceImport(ts.createIdentifier(i.as))), ts.createLiteral(i.name)), file); });
                 var fileBaseName = path.parse(file.fileName).base;
@@ -88,7 +87,7 @@ function emit(tsProg, host, compilerOpts, opts) {
                 dTsDecoratorsToFilter_1.forEach(function (item) {
                     var it = item["import"];
                     if (it) {
-                        // todo: support more cases, example `import {A, B} from "C"`
+                        // todo: support more cases, for example `import {A, B} from "C"`
                         strsToRemove_1.push("import {" + it.name + "} from \"" + it.from + "\";", '');
                     }
                     strsToRemove_1.push(item.node.getFullText(file));
@@ -119,4 +118,4 @@ function reportErrorsAndExit(allDiagnostics) {
     }
     return ng.exitCodeFromResult(allDiagnostics);
 }
-//# sourceMappingURL=ktngc.js.map
+//# sourceMappingURL=ngktc.js.map

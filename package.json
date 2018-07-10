@@ -1,16 +1,16 @@
 {
-  "name": "ivy-code-size",
+  "name": "angular-kotlin-aot-prototype",
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "@angular/animations": "file:/Users/jetbrains/angular/dist/packages-dist/animations",
-    "@angular/common": "file:/Users/jetbrains/angular/dist/packages-dist/common",
-    "@angular/compiler": "file:/Users/jetbrains/angular/dist/packages-dist/compiler",
-    "@angular/compiler-cli": "file:/Users/jetbrains/angular/dist/packages-dist/compiler-cli",
-    "@angular/core": "file:/Users/jetbrains/angular/dist/packages-dist/core",
-    "@angular/platform-browser": "file:/Users/jetbrains/angular/dist/packages-dist/platform-browser",
-    "@angular/platform-server": "file:/Users/jetbrains/angular/dist/packages-dist/platform-server",
+    "@angular/animations": "file:../angular/dist/packages-dist/animations",
+    "@angular/common": "file:../angular/dist/packages-dist/common",
+    "@angular/compiler": "file:../angular/dist/packages-dist/compiler",
+    "@angular/compiler-cli": "file:../angular/dist/packages-dist/compiler-cli",
+    "@angular/core": "file:../angular/dist/packages-dist/core",
+    "@angular/platform-browser": "file:../angular/dist/packages-dist/platform-browser",
+    "@angular/platform-server": "file:../angular/dist/packages-dist/platform-server",
     "@types/node": "^10.5.2",
     "http-server": "^0.11.1",
     "rollup": "^0.55.3",
@@ -20,16 +20,17 @@
     "rollup-plugin-uglify": "^3.0.0",
     "rxjs": "^6.0.0",
     "tslib": "^1.9.3",
-    "typescript": "^2.7.1"
+    "typescript": "~2.8"
   },
   "scripts": {
-    "clean": "yarn run rimraf ktsrc/lib",
-    "build-ktngc-tool": "yarn run tsc -p tools/ktngc/tsconfig.json",
-    "build-kt": "/usr/bin/env node $NODE_DEBUG_OPTION tools/ktngc/bin/ktngc.js -p ktsrc",
-    "test-kt": "yarn run clean && yarn run build-ktngc-tool && yarn run build-kt",
-    "build": "ngc",
+    "clean-sample-kotlin": "rimraf samples/kotlin/lib",
+    "build-ngktc-tool": "tsc -p tools/ngktc/tsconfig.json",
+    "build-sample-kotlin": "/usr/bin/env node $NODE_DEBUG_OPTION tools/ngktc/bin/ngktc.js -p samples/kotlin",
+    "build-ngktc-tool-and-sample": "yarn run clean-sample-kotlin && yarn run build-ngktc-tool && yarn run build-sample-kotlin",
+    "build-sample-typescript": "ngc -p samples/typescript",
+    "build-all": "yarn run build-ngktc-tool-and-sample && yarn run build-sample-typescript",
     "bundle": "rollup -c rollup.config.js",
     "serve": "http-server public",
-    "start": "npm run build && npm run bundle && npm run serve"
+    "start": "yarn run build-all && yarn run bundle && yarn run serve"
   }
 }

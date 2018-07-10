@@ -5,7 +5,7 @@ import pathMapping from 'rxjs/_esm5/path-mapping';
 import uglify from 'rollup-plugin-uglify';
 
 export default {
-    input: `./lib/src/hello-world.js`,
+    input: `./samples/typescript/lib/hello-world.js`,
     output: {
         name: 'hw',
         file: `public/bundle.js`,
@@ -16,18 +16,18 @@ export default {
         paths(pathMapping()),
         nodeResolve({jsnext: true, module: true}),
         buildOptimizer(),
-        // uglify({
-        //     // mangle: true,
-        //     compress: {
-        //         // global_defs: {
-        //         //     'ngDevMode': false,
-        //         // },
-        //         // keep_fargs: false,
-        //         // passes: 3,
-        //         pure_getters: true,
-        //         unsafe: true,
-        //     }
-        // })
+        uglify({
+            mangle: true,
+            compress: {
+                global_defs: {
+                    'ngDevMode': false,
+                },
+                keep_fargs: false,
+                passes: 3,
+                pure_getters: true,
+                unsafe: true,
+            }
+        })
     ],
     external: []
 }

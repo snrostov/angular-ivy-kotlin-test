@@ -1,0 +1,1 @@
+`ngktc` is `ngtsc` for Kotlin.

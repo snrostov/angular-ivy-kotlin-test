@@ -22,10 +22,10 @@ import {Import} from "@angular/compiler-cli/src/ngtsc/host/src/reflection";
 // CLI entry point
 if (require.main === module) {
     const args = process.argv.slice(2);
-    process.exitCode = compileKotlin(args);
+    process.exitCode = ngktc(args);
 }
 
-export function compileKotlin(args: string[]) {
+export function ngktc(args: string[]) {
     let {project, rootNames, options, errors: configErrors, emitFlags} = readCommandLineAndConfiguration(args);
 
     options.enableIvy = 'ngtsc';
@@ -63,13 +63,11 @@ function emit(
     ];
 
     const compilation = new IvyCompilation(handlers, checker, reflector);
-    var allDiagnostics: Array<ts.Diagnostic> = [];
+    let allDiagnostics: Array<ts.Diagnostic> = [];
 
     // Analyze every source file in the program.
     tsProg.getSourceFiles()
         .forEach(file => {
-            const tsFile = file as ts.SourceFile;
-
             allDiagnostics = allDiagnostics.concat(compilation.analyze(file));
         });
 
@@ -81,7 +79,7 @@ function emit(
             const importManager = new ImportManager();
             const contents: Array<string> = [];
 
-            var wasCompiled = false;
+            let wasCompiled = false;
 
             const dTsDecoratorsToFilter: Array<{
                 /**
@@ -162,7 +160,7 @@ function emit(
                 dTsDecoratorsToFilter.forEach(item => {
                     let it = item.import;
                     if (it) {
-                        // todo: support more cases, example `import {A, B} from "C"`
+                        // todo: support more cases, for example `import {A, B} from "C"`
                         strsToRemove.push(`import {${it.name}} from "${it.from}";`, '');
                     }
 
